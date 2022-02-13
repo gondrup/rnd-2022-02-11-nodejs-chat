@@ -39,11 +39,17 @@
                 messages: []
             },
             methods: {
-                login(e) {
+                async getMessages() {
+                    
+                },
+                async login(e) {
                     e.preventDefault();
 
                     if (this.username !== '') {
                         this.authenticated = true;
+
+                        const res = await fetch (`${serverUrl}/get-messages`);
+                        this.messages = await res.json();
 
                         const socket = new WebSocket(webSocketServerUrl);
                         socket.addEventListener('message', (e) => {

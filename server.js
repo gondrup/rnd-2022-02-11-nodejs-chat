@@ -20,6 +20,11 @@ const server = http.createServer(async (req, res) => {
             const html = fs.readFileSync(path.join(__dirname, 'client.html'));
             res.end(html);
             break;
+        case '/get-messages':
+            res.statusCode = 200;
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify(messages));
+            break;
         case '/send':
             const buffers = [];
             for await (const chunk of req) {
@@ -62,6 +67,10 @@ const server = http.createServer(async (req, res) => {
             res.end('Page not found');
             break;
     }
+});
+
+events.on('new-message', (message) => {
+    messages.push(message);
 });
 
 const wss = new WebSocketServer({ port: webSocketPort });
