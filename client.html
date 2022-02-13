@@ -29,6 +29,7 @@
     <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
     <script>
         const serverUrl = 'http://127.0.0.1:3000';
+        const webSocketServerUrl = 'ws://127.0.0.1:3001';
         const app = new Vue({
             el: '#chat-app',
             data: {
@@ -38,23 +39,16 @@
                 messages: []
             },
             methods: {
-                async fetchMessage() {
-                    const res = await fetch (`${serverUrl}/listen`);
-                    return res.json();
-                },
-                async messageLongPoll() {
-                    const message = await this.fetchMessage();
-
-                    this.messages.push(message);
-                    this.messageLongPoll();
-                },
                 login(e) {
                     e.preventDefault();
 
                     if (this.username !== '') {
                         this.authenticated = true;
 
-                        this.messageLongPoll();
+                        const socket = new WebSocket(webSocketServerUrl);
+                        socket.addEventListener('message', (e) => {
+                            this.messages.push(JSON.parse(e.data));
+                        });
                     }
                 },
                 sendMessage(e) {

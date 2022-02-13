@@ -1,4 +1,5 @@
 const http = require('http');
+const { WebSocketServer } = require('ws');
 const fs = require('fs');
 const path = require('path');
 const { URLSearchParams } = require('url');
@@ -6,9 +7,9 @@ const { EventEmitter } = require('events');
 
 const hostname = '127.0.0.1';
 const port = 3000; 
+const webSocketPort = 3001;
 
 let messages = [];
-let listeningRequests = [];
 const events = new EventEmitter();
 
 const server = http.createServer(async (req, res) => {
@@ -55,10 +56,6 @@ const server = http.createServer(async (req, res) => {
             events.emit('new-message', message);
             
             break;
-        case '/listen':
-            listeningRequests.push({req: req, res: res});
-
-            break;
         default:
             res.statusCode = 404;
             res.setHeader('Content-Type', 'text/plain');
@@ -67,19 +64,12 @@ const server = http.createServer(async (req, res) => {
     }
 });
 
-events.addListener('new-message', (message) => {
-    console.log(message);
-    messages.push(message);
+const wss = new WebSocketServer({ port: webSocketPort });
 
-    console.log(`Pushing to ${listeningRequests.length} waiting requests...`);
-
-    for (let listeningRequest of listeningRequests) {
-        console.log('Ending request with json: ' + JSON.stringify(message));
-        listeningRequest.res.statusCode = 200;
-        listeningRequest.res.setHeader('Content-Type', 'application/json');
-        listeningRequest.res.end(JSON.stringify(message));
-    }
-    listeningRequests = [];
+wss.on('connection', (ws) => {
+    events.on('new-message', (message) => {
+        ws.send(JSON.stringify(message));
+    });
 });
 
 server.listen(port, hostname, () => {
